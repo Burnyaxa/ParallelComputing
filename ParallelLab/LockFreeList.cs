@@ -9,6 +9,9 @@ namespace ParallelLab
 
         private readonly Node<T> _tail = new(int.MaxValue);
 
+        public Node<T> Head => _head;
+        public Node<T> Tail => _tail;
+
         public SkipList()
         {
             for (var i = 0; i < _head.Next.Length; ++i)
@@ -16,50 +19,50 @@ namespace ParallelLab
                 _head.Next[i] = new MarkedReference<Node<T>>(_tail, false);
             }
         }
-        
+
         public bool Add(Node<T> node)
         {
             var preds = new Node<T>[SkipListSettings.MaxLevel + 1];
             var succs = new Node<T>[SkipListSettings.MaxLevel + 1];
-            
+
             while (true)
             {
+                Find(node, ref preds, ref succs);
+                var topLevel = node.TopLevel;
+
+                for (var level = SkipListSettings.MinLevel; level <= topLevel; ++level)
                 {
-                    var topLevel = node.TopLevel;
-
-                    for (var level = SkipListSettings.MinLevel; level <= topLevel; ++level)
-                    {
-                        var tempSucc = succs[level];
-                        node.Next[level] = new MarkedReference<Node<T>>(tempSucc, false);
-                    }
-
-                    var pred = preds[SkipListSettings.MinLevel];
-                    var succ = succs[SkipListSettings.MinLevel];
-
-                    node.Next[SkipListSettings.MinLevel] = new MarkedReference<Node<T>>(succ, false);
-
-                    if (!pred.Next[SkipListSettings.MinLevel].CompareAndExchange(node, false, succ, false))
-                    {
-                        continue;
-                    }
-
-                    for (var level = 1; level <= topLevel; level++)
-                    {
-                        while (true)
-                        {
-                            pred = preds[level];
-                            succ = succs[level];
-
-                            if (pred.Next[level].CompareAndExchange(node, false, succ, false))
-                            {
-                                break;
-                            }
-
-                            Find(node, ref preds, ref succs);
-                        }
-                    }
-                    return true;
+                    var tempSucc = succs[level];
+                    node.Next[level] = new MarkedReference<Node<T>>(tempSucc, false);
                 }
+
+                var pred = preds[SkipListSettings.MinLevel];
+                var succ = succs[SkipListSettings.MinLevel];
+
+                node.Next[SkipListSettings.MinLevel] = new MarkedReference<Node<T>>(succ, false);
+
+                if (!pred.Next[SkipListSettings.MinLevel].CompareAndExchange(node, false, succ, false))
+                {
+                    continue;
+                }
+
+                for (var level = 1; level <= topLevel; level++)
+                {
+                    while (true)
+                    {
+                        pred = preds[level];
+                        succ = succs[level];
+
+                        if (pred.Next[level].CompareAndExchange(node, false, succ, false))
+                        {
+                            break;
+                        }
+
+                        Find(node, ref preds, ref succs);
+                    }
+                }
+
+                return true;
             }
         }
 
@@ -114,14 +117,14 @@ namespace ParallelLab
                 }
             }
         }
-        
+
         private bool Find(Node<T> node, ref Node<T>[] preds, ref Node<T>[] succs)
         {
             var bottomLevel = 0;
             var marked = false;
             var isRetryNeeded = false;
             Node<T> curr = null;
-            
+
             while (true)
             {
                 var pred = _head;
@@ -165,6 +168,7 @@ namespace ParallelLab
                     preds[level] = pred;
                     succs[level] = curr;
                 }
+
                 return curr != null && (curr.NodeKey == node.NodeKey);
             }
         }
