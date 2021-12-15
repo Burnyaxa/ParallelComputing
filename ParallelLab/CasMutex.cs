@@ -1,75 +1,61 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
+using ParallelLab.Util.Atomic;
 
 namespace ParallelLab
 {
     public class CasMutex
     {
-        private volatile int _isLocked = 0;
-        private Thread _lockedThread;
-        private volatile bool _isNotified;
-        private volatile bool _isNotifiedAll;
+        private readonly AtomicReference<Thread> _lockedThread = new AtomicReference<Thread>(null);
         private readonly SynchronizedCollection<Thread> _threads = new SynchronizedCollection<Thread>();
         public void Lock()
         {
-            var currentValue = _isLocked;
-            while (Interlocked.CompareExchange(ref _isLocked, 0, currentValue) == 0)
+            while (!_lockedThread.CompareAndExchange(Thread.CurrentThread, null))
             {
                 Thread.Yield();
-                currentValue = _isLocked;
             }
-            _lockedThread = Thread.CurrentThread;
         }
 
         public void Unlock()
         {
-            _lockedThread = null;
-            _isLocked = 0;
+            _lockedThread.CompareAndExchange(null, _lockedThread.Value);
         }
 
         public void Wait()
         {
-            if (_lockedThread != Thread.CurrentThread)
+            var current = Thread.CurrentThread;
+            if (_lockedThread.Value != Thread.CurrentThread)
             {
                 throw new ThreadStateException();
             }
+            _threads.Add(current);
             Unlock();
-            _threads.Add(Thread.CurrentThread);
-            while (!_isNotified || !_isNotifiedAll)
+            while (_threads.Contains(current))
             {
                 Thread.Yield();
             }
-            _threads.Remove(Thread.CurrentThread);
             Lock();
-            _isNotified = false;
         }
 
         public void Notify()
         {
-            if (_lockedThread != Thread.CurrentThread)
+            var current = Thread.CurrentThread;
+            if (_lockedThread.Value != current)
             {
                 throw new ThreadStateException();
             }
 
-            _isNotified = true;
+            _threads.Remove(current);
         }
 
         public void NotifyAll()
         {
-            if (_lockedThread != Thread.CurrentThread)
+            if (_lockedThread.Value != Thread.CurrentThread)
             {
                 throw new ThreadStateException();
             }
 
-            _isNotifiedAll = true;
-            
-            while (_threads.Count != 0)
-            {
-                
-            }
-
-            _isNotifiedAll = false;
-
+            _threads.Clear();
         }
     }
 }

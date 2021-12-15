@@ -38,8 +38,8 @@ namespace ParallelLab.Util.Atomic
         public bool CompareAndSet(bool expectedValue,
             bool newValue)
         {
-            int expectedVal = BoolToInt(expectedValue);
-            int newVal = BoolToInt(newValue);
+            var expectedVal = BoolToInt(expectedValue);
+            var newVal = BoolToInt(newValue);
             return (Interlocked.CompareExchange(
                 ref _currentValue, newVal, expectedVal) == expectedVal);
         }

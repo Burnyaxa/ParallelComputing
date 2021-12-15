@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace ParallelLab.Util
+namespace ParallelLab.Util.Atomic
 {
     public class AtomicReference<T> where T : class
     {
