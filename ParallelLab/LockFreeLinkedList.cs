@@ -59,7 +59,7 @@ namespace ParallelLab
                 var rightNext = right.Next.Value;
 
                 var snip = right.Next.AttemptMark(rightNext, true);
-                if (!snip)
+                if (snip)
                 {
                     continue;
                 }

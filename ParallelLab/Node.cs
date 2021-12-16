@@ -6,7 +6,7 @@ namespace ParallelLab
     public class Node<T>
     {
         private static uint _randomSeed;
-        public MarkedReference<T> NodeValue { get; }
+        public T Value { get; }
 
         public int NodeKey { get; }
 
@@ -20,7 +20,6 @@ namespace ParallelLab
         }
         public Node(int key)
         {
-            NodeValue = new MarkedReference<T>(default(T), false);
             NodeKey = key;
             Next = new MarkedReference<Node<T>>[SkipListSettings.MaxLevel + 1];
             for (var i = 0; i < Next.Length; ++i)
@@ -32,7 +31,7 @@ namespace ParallelLab
 
         public Node(T value, int key)
         {
-            NodeValue = new MarkedReference<T>(value, false);
+            Value = value;
             NodeKey = key;
             var height = RandomLevel();
             Next = new MarkedReference<Node<T>>[height + 1];

@@ -23,7 +23,7 @@ namespace ParallelLab.Tests.CasMutexTests
             _random = new Random();
         }
         [Test]
-        public void Lock_ShouldLockTheFirstThread()
+        public void CasMutexTestPerformance()
         {
             var threads = new List<Thread>()
             {

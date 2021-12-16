@@ -4,23 +4,14 @@ namespace ParallelLab
 {
     public class LinkedListNode<T>
     {
-        private T _value;
-        private MarkedReference<LinkedListNode<T>> _next;
-        public T Value
-        {
-            get => _value;
-            set => _value = value;
-        }
-        public MarkedReference<LinkedListNode<T>> Next
-        {
-            get => _next;
-            set => _next = value;
-        }
+        public T Value { get; set; }
+
+        public MarkedReference<LinkedListNode<T>> Next { get; set; }
 
         public LinkedListNode(T value)
         {
-            _value = value;
-            _next = new MarkedReference<LinkedListNode<T>>(default, false);
+            Value = value;
+            Next = new MarkedReference<LinkedListNode<T>>(default, false);
         }
         
     }

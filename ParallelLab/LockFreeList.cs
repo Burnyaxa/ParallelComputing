@@ -5,18 +5,15 @@ namespace ParallelLab
 {
     public class SkipList<T>
     {
-        private readonly Node<T> _head = new(int.MinValue);
+        public Node<T> Head { get; } = new(int.MinValue);
 
-        private readonly Node<T> _tail = new(int.MaxValue);
-
-        public Node<T> Head => _head;
-        public Node<T> Tail => _tail;
+        public Node<T> Tail { get; } = new(int.MaxValue);
 
         public SkipList()
         {
-            for (var i = 0; i < _head.Next.Length; ++i)
+            for (var i = 0; i < Head.Next.Length; ++i)
             {
-                _head.Next[i] = new MarkedReference<Node<T>>(_tail, false);
+                Head.Next[i] = new MarkedReference<Node<T>>(Tail, false);
             }
         }
 
@@ -68,7 +65,6 @@ namespace ParallelLab
 
         public bool Remove(Node<T> node)
         {
-            var bottomLevel = 0;
             var preds = new Node<T>[SkipListSettings.MaxLevel + 1];
             var succs = new Node<T>[SkipListSettings.MaxLevel + 1];
 
@@ -80,39 +76,36 @@ namespace ParallelLab
                     return false;
                 }
 
-                else
+                Node<T> succ;
+                for (var level = node.TopLevel; level > SkipListSettings.MinLevel; level--)
                 {
-                    Node<T> succ;
-                    for (var level = node.TopLevel; level > bottomLevel; level--)
-                    {
-                        var isMarked = false;
-                        succ = node.Next[level].Get(ref isMarked);
+                    var isMarked = false;
+                    succ = node.Next[level].Get(ref isMarked);
 
-                        while (!isMarked)
-                        {
-                            node.Next[level].CompareAndExchange(succ, true, succ, false);
-                            succ = node.Next[level].Get(ref isMarked);
-                        }
+                    while (!isMarked)
+                    {
+                        node.Next[level].CompareAndExchange(succ, true, succ, false);
+                        succ = node.Next[level].Get(ref isMarked);
+                    }
+                }
+
+                var marked = false;
+                succ = node.Next[SkipListSettings.MinLevel].Get(ref marked);
+
+                while (true)
+                {
+                    var iMarkedIt = node.Next[SkipListSettings.MinLevel].CompareAndExchange(succ, true, succ, false);
+                    succ = succs[SkipListSettings.MinLevel].Next[SkipListSettings.MinLevel].Get(ref marked);
+
+                    if (iMarkedIt)
+                    {
+                        Find(node, ref preds, ref succs);
+                        return true;
                     }
 
-                    var marked = false;
-                    succ = node.Next[bottomLevel].Get(ref marked);
-
-                    while (true)
+                    if (marked)
                     {
-                        var iMarkedIt = node.Next[bottomLevel].CompareAndExchange(succ, true, succ, false);
-                        succ = succs[bottomLevel].Next[bottomLevel].Get(ref marked);
-
-                        if (iMarkedIt)
-                        {
-                            Find(node, ref preds, ref succs);
-                            return true;
-                        }
-
-                        if (marked)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
             }
@@ -120,15 +113,14 @@ namespace ParallelLab
 
         private bool Find(Node<T> node, ref Node<T>[] preds, ref Node<T>[] succs)
         {
-            var bottomLevel = 0;
             var marked = false;
             var isRetryNeeded = false;
             Node<T> curr = null;
 
             while (true)
             {
-                var pred = _head;
-                for (var level = SkipListSettings.MaxLevel; level >= bottomLevel; level--)
+                var pred = Head;
+                for (var level = SkipListSettings.MaxLevel; level >= SkipListSettings.MinLevel; level--)
                 {
                     curr = pred.Next[level].Value;
                     while (true)
@@ -149,8 +141,7 @@ namespace ParallelLab
 
                         if (isRetryNeeded)
                         {
-                            isRetryNeeded = false;
-                            continue;
+                            break;
                         }
 
                         if (curr.NodeKey < node.NodeKey)
@@ -163,6 +154,11 @@ namespace ParallelLab
                         {
                             break;
                         }
+                    }
+
+                    if (isRetryNeeded)
+                    {
+                        continue;
                     }
 
                     preds[level] = pred;
