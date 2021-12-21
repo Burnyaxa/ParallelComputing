@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using ParallelLab.Util;
 
 namespace ParallelLab.Tests.CollectionsTests.SkipListTests
 {
@@ -15,6 +14,7 @@ namespace ParallelLab.Tests.CollectionsTests.SkipListTests
         private ConcurrentStack<Node<int>> _nodes;
         private Setup _setup;
         private Random _random;
+        private readonly object randomLock = new();
         
         [SetUp]
         public void SetUp()
@@ -28,7 +28,6 @@ namespace ParallelLab.Tests.CollectionsTests.SkipListTests
         }
 
         [Test]
-        [Repeat(300)]
         public void LockFreeSkipListTestPerformance()
         {
             _setup.RunActions(AddToCollection, 10);
@@ -42,7 +41,11 @@ namespace ParallelLab.Tests.CollectionsTests.SkipListTests
 
         private void AddToCollection(object? obj)
         {
-            var key = _random.Next(0, 100000);
+            int key;
+            lock (randomLock)
+            {
+                key = _random.Next(0, 100000);
+            }
             var node = new Node<int>((int) obj, key);
             _list.Add(node);
             _nodes.Push(node);
@@ -57,21 +60,5 @@ namespace ParallelLab.Tests.CollectionsTests.SkipListTests
                 _removedVales.Add(result.Value);
             }
         }
-        
-        // private static void PrintSkipListForm<T>(SkipList<T> target) where T : IComparable<T>{
-        //     for (int i = SkipListSettings.MaxLevel; i >= 0; i--){
-        //         Console.Write("{0:00}|", i);
-        //         bool marked = false;
-        //         var node = target.Head.Next[i].Get(ref marked);
-        //         while (node != target.Tail){
-        //             Console.Write(node.TopLevel >= i ? $"{node.NodeValue.Value} " : " ");
-        //             node = node.Next[i].Get(ref marked);
-        //         }
-        //
-        //         Console.WriteLine();
-        //     }
-        //
-        //     Console.WriteLine("----------------------------");
-        // }
     }
 }

@@ -24,10 +24,13 @@ namespace ParallelLab
 
             while (true)
             {
-                Find(node, ref preds, ref succs);
+                if (Find(node, ref preds, ref succs))
+                {
+                    return false;
+                }
                 var topLevel = node.TopLevel;
 
-                for (var level = SkipListSettings.MinLevel; level <= topLevel; ++level)
+                for (var level = SkipListSettings.MinLevel; level <= topLevel; level++)
                 {
                     var tempSucc = succs[level];
                     node.Next[level] = new MarkedReference<Node<T>>(tempSucc, false);
@@ -158,6 +161,7 @@ namespace ParallelLab
 
                     if (isRetryNeeded)
                     {
+                        isRetryNeeded = false;
                         continue;
                     }
 
