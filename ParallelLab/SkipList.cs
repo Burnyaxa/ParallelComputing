@@ -1,5 +1,4 @@
-﻿using System;
-using ParallelLab.Util;
+﻿using ParallelLab.Util;
 
 namespace ParallelLab
 {
@@ -169,7 +168,15 @@ namespace ParallelLab
                     succs[level] = curr;
                 }
 
-                return curr != null && (curr.NodeKey == node.NodeKey);
+                if (curr.NodeKey == node.NodeKey)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+                //return curr != null && (curr.NodeKey == node.NodeKey);
             }
         }
     }

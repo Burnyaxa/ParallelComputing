@@ -39,10 +39,8 @@ namespace ParallelLab
                     Interlocked.CompareExchange(ref _tail, node, tail);
                     return;
                 }
-                else
-                {
-                    Interlocked.CompareExchange(ref _tail, tailNext, tail);
-                }
+
+                Interlocked.CompareExchange(ref _tail, tailNext, tail);
             }
         }
 

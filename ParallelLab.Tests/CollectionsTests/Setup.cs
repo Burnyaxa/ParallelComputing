@@ -7,6 +7,7 @@ namespace ParallelLab.Tests.CollectionsTests
 {
     public class Setup
     {
+        private readonly object _obj = new object();
         private readonly Random _random = new Random();
         
         public List<Thread> Threads = new List<Thread>();
@@ -21,7 +22,12 @@ namespace ParallelLab.Tests.CollectionsTests
 
             Parallel.ForEach(threads, t =>
             {
-                t.Start(_random.Next(0, 10000));
+                int value;
+                lock (_obj)
+                {
+                    value = _random.Next(0, 10000);
+                }
+                t.Start(value);
             });
 
             foreach (var thread in threads)

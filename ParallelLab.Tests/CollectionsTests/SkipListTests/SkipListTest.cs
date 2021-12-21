@@ -47,9 +47,12 @@ namespace ParallelLab.Tests.CollectionsTests.SkipListTests
                 key = _random.Next(0, 100000);
             }
             var node = new Node<int>((int) obj, key);
-            _list.Add(node);
-            _nodes.Push(node);
-            _addedValues.Add(node.Value);
+            var added = _list.Add(node);
+            if (added)
+            {
+                _nodes.Push(node);
+                _addedValues.Add(node.Value);
+            }
         }
 
         private void RemoveFromCollection(object? obj)
