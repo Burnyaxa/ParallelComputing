@@ -151,7 +151,6 @@ namespace ParallelLab
                             pred = curr;
                             curr = succ;
                         }
-
                         else
                         {
                             break;

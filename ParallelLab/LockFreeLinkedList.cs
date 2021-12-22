@@ -64,15 +64,16 @@ namespace ParallelLab
                     continue;
                 }
 
-                left.Next.CompareAndExchange(right, false, rightNext, false);
+                left.Next.CompareAndExchange(rightNext, false, right, false);
                 return true;
             }
         }
 
         public LinkedListNode<TValue> Search(TValue searchValue, ref LinkedListNode<TValue> leftNode)
         {
+            var isRetryNeeded = false;
             var marked = false;
-            retry:
+            
             while (true)
             {
                 var head = Head;
@@ -86,11 +87,18 @@ namespace ParallelLab
                         var snip = head.Next.CompareAndExchange(succ, false, headNext, false);
                         if (!snip)
                         {
-                            goto retry;
+                            isRetryNeeded = true;
+                            break;
                         }
 
                         headNext = head.Next.Value;
                         succ = headNext.Next.Get(ref marked);
+                    }
+
+                    if (isRetryNeeded)
+                    {
+                        isRetryNeeded = false;
+                        continue;
                     }
 
                     if (headNext.Value.CompareTo(searchValue) < 0)
@@ -105,7 +113,6 @@ namespace ParallelLab
                     }
                 }
             }
-
         }
     }
 }

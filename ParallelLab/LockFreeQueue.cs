@@ -59,7 +59,7 @@ namespace ParallelLab
                 if (head != _head) continue;
                 if (next is null)
                 {
-                    result = default(T);
+                    result = default;
                     return false;
                 }
 
